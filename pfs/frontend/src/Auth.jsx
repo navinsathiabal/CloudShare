@@ -44,7 +44,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="app-container">
+    <div className="app-container auth-layout">
       <div className="header">
         <h1>CloudShare</h1>
         <p>{isLogin ? 'Welcome back! Log in to continue.' : 'Create an account to start sharing.'}</p>
@@ -89,7 +89,7 @@ export default function Auth() {
 
           {error && <div className={`error-message ${error.includes('successful') ? 'success-msg' : ''}`}>{error}</div>}
 
-          <button type="submit" className="browse-btn auth-submit" disabled={loading}>
+          <button type="submit" className="browse-btn auth-submit gradient-button" disabled={loading}>
             {loading ? 'Processing...' : (isLogin ? <><LogIn size={18}/> Login</> : <><UserPlus size={18}/> Register</>)}
           </button>
         </form>

@@ -7,7 +7,6 @@ import './index.css';
 function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('upload'); // 'upload' or 'history'
   const [historyFiles, setHistoryFiles] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
@@ -30,10 +29,8 @@ function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'history') {
-      fetchHistory();
-    }
-  }, [activeTab]);
+    fetchHistory();
+  }, []);
 
   const fetchHistory = async () => {
     setLoadingHistory(true);
@@ -104,6 +101,7 @@ function Dashboard() {
 
       setFileUrl(response.data.url);
       setFileName(response.data.fileName);
+      fetchHistory();
     } catch (err) {
       console.error('Upload Error:', err);
       setError('An error occurred during upload. Check backend connection and S3 config.');
@@ -129,88 +127,98 @@ function Dashboard() {
   };
 
   return (
-    <div className="app-container">
-      <div style={{ position: 'absolute', top: '20px', right: '30px' }}>
-        <button className="copy-btn" onClick={handleLogout} style={{ border: 'none', display: 'flex', gap: '8px' }}>
-          <LogOut size={18} /> Logout
-        </button>
-      </div>
-      <div className="header">
-        <h1>CloudShare</h1>
-        {user && <p style={{ color:'var(--primary)', marginBottom:'10px'}}>Hello, {user.username}!</p>}
-      </div>
-
-      <div className="tabs">
-        <button className={`tab-btn ${activeTab === 'upload' ? 'active' : ''}`} onClick={() => setActiveTab('upload')}>
-          <UploadCloud size={18} /> Upload
-        </button>
-        <button className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>
-          <Clock size={18} /> History
-        </button>
+    <div className="app-container dashboard-layout">
+      <div className="shell-header">
+        <div className="shell-brand">
+          <div className="shell-title">CloudShare</div>
+          <div className="shell-subtitle">Secure file transfer console</div>
+        </div>
+        <div className="shell-actions">
+          <div className="shell-user">
+            <span className="shell-user-label">User</span>
+            <span className="shell-user-name">{user?.username || 'Operator'}</span>
+          </div>
+          <button className="copy-btn shell-logout" onClick={handleLogout} style={{ border: 'none', display: 'flex', gap: '8px' }}>
+            <LogOut size={18} /> Logout
+          </button>
+        </div>
       </div>
 
-      <div className="upload-card">
-        {activeTab === 'upload' && (
-          <>
-            {(!isUploading && !fileUrl) && (
-              <div
-                className={`dropzone ${isDragging ? 'active' : ''}`}
-                onDragOver={onDragOver}
-                onDragLeave={onDragLeave}
-                onDrop={onDrop}
-                onClick={() => fileInputRef.current.click()}
-              >
-                <UploadCloud size={64} className="dropzone-icon" />
-                <h3>Drag & Drop your file here</h3>
-                <p>Upload images, documents, or media (Max 50MB)</p>
-                <button className="browse-btn">Browse Files</button>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={onFileSelect}
-                  className="file-input"
-                />
-              </div>
-            )}
+      <div className="shell-body">
+        <div className="panel panel-main">
+          <div className="panel-header">
+            <div>
+              <h2 className="panel-title">Upload</h2>
+              <p className="panel-subtitle">Drag, drop, and secure files for sharing.</p>
+            </div>
+            <span className="panel-meta">{isUploading ? 'Transferring' : 'Ready'}</span>
+          </div>
 
-            {isUploading && (
-              <div className="uploading-state">
-                <div className="spinner"></div>
-                <h3>Uploading...</h3>
-                <p>{uploadProgress}% completed</p>
-              </div>
-            )}
+          {(!isUploading && !fileUrl) && (
+            <div
+              className={`dropzone ${isDragging ? 'active' : ''}`}
+              onDragOver={onDragOver}
+              onDragLeave={onDragLeave}
+              onDrop={onDrop}
+              onClick={() => fileInputRef.current.click()}
+            >
+              <UploadCloud size={64} className="dropzone-icon" />
+              <h3>Drag & Drop your file here</h3>
+              <p>Upload images, documents, or media (Max 50MB)</p>
+              <button className="browse-btn gradient-button">Browse Files</button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={onFileSelect}
+                className="file-input"
+              />
+            </div>
+          )}
 
-            {fileUrl && (
-              <div className="success-state">
-                <CheckCircle size={64} className="success-icon" />
-                <h3>Upload Successful!</h3>
-                <p>Your file <strong>{fileName}</strong> is now securely stored.</p>
-                
-                <div className="url-container">
-                  <LinkIcon size={20} color="var(--text-muted)" style={{ marginLeft: '10px' }} />
-                  <input type="text" readOnly value={fileUrl} className="url-input" />
-                  <button 
-                    className={`copy-btn ${copied ? 'copied' : ''}`} 
-                    onClick={() => copyToClipboard(fileUrl)}
-                    title="Copy to clipboard"
-                  >
-                    <Copy size={20} />
-                  </button>
-                </div>
+          {isUploading && (
+            <div className="uploading-state">
+              <div className="spinner"></div>
+              <h3>Uploading...</h3>
+              <p>{uploadProgress}% completed</p>
+            </div>
+          )}
 
-                <button className="reset-btn" onClick={resetUpload}>
-                  Upload Another File
+          {fileUrl && (
+            <div className="success-state">
+              <CheckCircle size={64} className="success-icon" />
+              <h3>Upload Successful!</h3>
+              <p>Your file <strong>{fileName}</strong> is now securely stored.</p>
+              
+              <div className="url-container">
+                <LinkIcon size={20} color="var(--text-muted)" style={{ marginLeft: '10px' }} />
+                <input type="text" readOnly value={fileUrl} className="url-input" />
+                <button 
+                  className={`copy-btn ${copied ? 'copied' : ''}`} 
+                  onClick={() => copyToClipboard(fileUrl)}
+                  title="Copy to clipboard"
+                >
+                  <Copy size={20} />
                 </button>
               </div>
-            )}
-            {error && <div className="error-message">{error}</div>}
-          </>
-        )}
 
-        {activeTab === 'history' && (
+              <button className="reset-btn gradient-button" onClick={resetUpload}>
+                Upload Another File
+              </button>
+            </div>
+          )}
+          {error && <div className="error-message">{error}</div>}
+        </div>
+
+        <div className="panel panel-side">
+          <div className="panel-header">
+            <div>
+              <h2 className="panel-title">History</h2>
+              <p className="panel-subtitle">Your recent uploads and links.</p>
+            </div>
+            <span className="panel-meta">{historyFiles.length} items</span>
+          </div>
+
           <div className="history-tab">
-            <h3>Your Recent Uploads</h3>
             {loadingHistory ? (
               <p style={{textAlign: 'center', marginTop: '2rem'}}>Loading history...</p>
             ) : historyFiles.length === 0 ? (
@@ -236,8 +244,7 @@ function Dashboard() {
               </ul>
             )}
           </div>
-        )}
-
+        </div>
       </div>
     </div>
   );
