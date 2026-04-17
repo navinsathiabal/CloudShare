@@ -8,7 +8,7 @@ const crypto = require('crypto');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const pool = require('./db');
+const supabase = require('./db');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -81,7 +81,17 @@ app.post('/api/upload', verifyToken, upload.single('file'), async (req, res) => 
     const presignedUrl = await getSignedUrl(s3Client, getCommand, { expiresIn: 3600 }); // 3600 seconds = 1 hour
 
     // Insert into database to keep track of user uploads
-    await pool.query('INSERT INTO files (user_id, file_name, file_url) VALUES (?, ?, ?)', [req.user.id, file.originalname, publicUrl]);
+    const { error: fileInsertError } = await supabase
+      .from('files')
+      .insert({
+        user_id: req.user.id,
+        file_name: file.originalname,
+        file_url: publicUrl
+      });
+
+    if (fileInsertError) {
+      throw fileInsertError;
+    }
 
     res.json({
       message: 'File uploaded successfully',
@@ -106,15 +116,34 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    const [existingUsers] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-    if (existingUsers.length > 0) {
+    const { data: existingUsers, error: existingUsersError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .limit(1);
+
+    if (existingUsersError) {
+      throw existingUsersError;
+    }
+
+    if (existingUsers && existingUsers.length > 0) {
       return res.status(400).json({ error: 'Email is already registered' });
     }
 
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    await pool.query('INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)', [username, email, passwordHash]);
+    const { error: insertUserError } = await supabase
+      .from('users')
+      .insert({
+        username,
+        email,
+        password_hash: passwordHash
+      });
+
+    if (insertUserError) {
+      throw insertUserError;
+    }
     
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
@@ -127,8 +156,17 @@ app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-    const user = users[0];
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .limit(1);
+
+    if (usersError) {
+      throw usersError;
+    }
+
+    const user = users && users[0];
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
@@ -157,8 +195,17 @@ app.post('/api/login', async (req, res) => {
 
 app.get('/api/files', verifyToken, async (req, res) => {
   try {
-    const [files] = await pool.query('SELECT file_name, file_url, created_at FROM files WHERE user_id = ? ORDER BY created_at DESC', [req.user.id]);
-    res.json({ files });
+    const { data: files, error: filesError } = await supabase
+      .from('files')
+      .select('file_name, file_url, created_at')
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false });
+
+    if (filesError) {
+      throw filesError;
+    }
+
+    res.json({ files: files || [] });
   } catch (error) {
     console.error('Fetch files error:', error);
     res.status(500).json({ error: 'Failed to fetch files' });
