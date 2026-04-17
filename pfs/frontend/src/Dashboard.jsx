@@ -148,7 +148,7 @@ function Dashboard() {
         <div className="panel panel-main">
           <div className="panel-header">
             <div>
-              <h2 className="panel-title">Upload</h2>
+              <h2 className="panel-title">New Upload</h2>
               <p className="panel-subtitle">Drag, drop, and secure files for sharing.</p>
             </div>
             <span className="panel-meta">{isUploading ? 'Transferring' : 'Ready'}</span>
@@ -212,7 +212,7 @@ function Dashboard() {
         <div className="panel panel-side">
           <div className="panel-header">
             <div>
-              <h2 className="panel-title">History</h2>
+              <h2 className="panel-title">Your Uploads</h2>
               <p className="panel-subtitle">Your recent uploads and links.</p>
             </div>
             <span className="panel-meta">{historyFiles.length} items</span>
