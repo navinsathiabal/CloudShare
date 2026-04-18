@@ -104,7 +104,7 @@ function Dashboard() {
       fetchHistory();
     } catch (err) {
       console.error('Upload Error:', err);
-      setError('An error occurred during upload. Check backend connection and S3 config.');
+      setError('Maximum File Size Limit is 10MB. Please try with a smaller file.');
     } finally {
       setIsUploading(false);
     }
@@ -164,7 +164,7 @@ function Dashboard() {
             >
               <UploadCloud size={64} className="dropzone-icon" />
               <h3>Drag & Drop your file here</h3>
-              <p>Upload images, documents, or media (Max 50MB)</p>
+              <p>Upload images, documents, or media (Max 10MB)</p>
               <button className="browse-btn gradient-button">Browse Files</button>
               <input
                 type="file"

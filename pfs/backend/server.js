@@ -19,7 +19,10 @@ app.use(express.json());
 
 // Configure Multer for in-memory storage
 const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10 MB limit
+});
 
 // Initialize S3 Client
 const s3Client = new S3Client({
